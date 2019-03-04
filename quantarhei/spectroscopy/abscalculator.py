@@ -95,7 +95,8 @@ class AbsSpectrumCalculator(EnergyUnitsManaged):
             if self.system is not None:
                 if isinstance(self.system,Molecule):
                     #self._calculate_Molecule(rwa)      
-                    spect = self._calculate_monomer(raw=raw)
+                    spect = self._calculate_monomer(raw=raw,rate_matrix=
+                                              self._rate_matrix)
                 elif isinstance(self.system, Aggregate):
                     spect = self._calculate_aggregate( 
                                               relaxation_tensor=
@@ -227,30 +228,62 @@ class AbsSpectrumCalculator(EnergyUnitsManaged):
 
 
         
-    def _calculate_monomer(self, raw=False):
+    def _calculate_monomer(self, raw=False, rate_matrix=None):
         """ Calculates the absorption spectrum of a monomer 
         
         
         """
         ta = self.TimeAxis
-        # transition frequency
-        om = self.system.elenergies[1]-self.system.elenergies[0]
-        # transition dipole moment
-        dm = self.system.dmoments[0,1,:]
-        # dipole^2
-        dd = numpy.dot(dm,dm)
-        # natural life-time from the dipole moment
-        gama = [-1.0/self.system.get_electronic_natural_lifetime(1)]
+        # TimeAxis
+        tr = {"ta":ta}
         
-        if self.system._has_system_bath_coupling:
-            # correlation function
-            ct = self.system.get_egcf((0,1))            
-            tr = {"ta":ta,"dd":dd,"om":om-self.rwa,"ct":ct,"gg":gama}
-        else:
-            tr = {"ta":ta,"dd":dd,"om":om-self.rwa,"gg":gama}
+        if rate_matrix is not None:
+            RR = rate_matrix  # rate matrix is in excitonic basis
+            gg = []
+            if isinstance(RR, TimeDependent):
+                for ii in range(self.system.nel):
+                    gg.append(RR.data[:,ii,ii])
+            else:
+                for ii in range(self.system.nel):
+                    gg.append([RR.data[ii,ii]])
+        
+        for ii in range(1,self.system.nel):
+            # transition frequency
+            om = self.system.elenergies[ii]-self.system.elenergies[0]
+            # transition dipole moment
+            dm = self.system.dmoments[0,ii,:]
+            # dipole^2
+            dd = numpy.dot(dm,dm)
+            #print("state:",ii,"dipole:",dd,"energy:",om)
+            # natural life-time from the dipole moment
+            gama = [-1.0/self.system.get_electronic_natural_lifetime(ii)]
+            
+            if rate_matrix is not None:
+                tr["gg"] = gg[ii]
+            else:
+                tr["gg"] = [0.0]
+            
+            if self.system._has_system_bath_coupling:
+                # correlation function
+                ct = self.system.get_egcf((0,ii))            
+                #tr = {"ta":ta,"dd":dd,"om":om-self.rwa,"ct":ct,"gg":gama}
+                tr["dd"] = dd
+                tr["om"] = om-self.rwa
+                tr["ct"] = ct
+                tr["gg"][0] += gama[0]
+            else:
+                #tr = {"ta":ta,"dd":dd,"om":om-self.rwa,"gg":gama}
+                tr["dd"] = dd
+                tr["om"] = om-self.rwa
+                tr["gg"][0] += gama[0]
 
-        # calculates the one transition of the monomer        
-        data = numpy.real(self.one_transition_spectrum(tr))
+            #print("  lifetime:",1/tr["gg"][0],"gamma",tr["gg"][0])
+            
+            # calculates the one transition of the monomer
+            if ii == 1:
+                data = numpy.real(self.one_transition_spectrum(tr))
+            else:
+                data += numpy.real(self.one_transition_spectrum(tr))
         
 
         # we only want to retain the upper half of the spectrum
@@ -340,7 +373,7 @@ class AbsSpectrumCalculator(EnergyUnitsManaged):
         data = numpy.real(self.one_transition_spectrum(tr))
         
         for ii in range(2,HH.dim):
-            if relaxation_tensor is not None:
+            if (relaxation_tensor is not None) or (rate_matrix is not None):
                 tr["gg"] = gg[ii]
             else:
                 tr["gg"] = [0.0]
