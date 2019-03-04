@@ -540,6 +540,7 @@ class DFunction(Saveable):
              text=None,
              text_font=None,
              real_only=True,
+             legend=None,
              show=True,
              color=None, filename="ahoj.png"):
         """Plotting of the DFunction's data against the ValueAxis.
@@ -559,6 +560,8 @@ class DFunction(Saveable):
         
         if color is not None:
             if len(color) == 1:
+                clr = [color, color]
+            elif '--' in color:
                 clr = [color, color]
             else:
                 clr = [color[0], color[1]]
@@ -585,6 +588,9 @@ class DFunction(Saveable):
 
         if title is not None:
             plt.title(title)
+           
+        if legend is not None:
+            plt.legend(legend)
 
         if text is not None:
             if text_font is not None:
