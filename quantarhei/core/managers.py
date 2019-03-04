@@ -201,7 +201,10 @@ class Manager(metaclass=Singleton):
         else:
             self.load_units()
 
-
+        self.current_units = {"energy":"1/fs", "frequency":"1/fs",
+                                  "dipolemoment":"Debye",
+                                  "temperature":"Kelvin", "length":"A"}
+        
         #
         #  Setting implementations
         #
@@ -253,9 +256,8 @@ class Manager(metaclass=Singleton):
             self.save_implementations()  
             
         else:
-            self.load_implementations()
-            
-            
+            self.load_implementations()  
+        
         self.change_implementation_at_runtime = True
         
         self.basis_stack = []
@@ -488,6 +490,8 @@ class Manager(metaclass=Singleton):
             if units in self.units[utype]:
                 self.current_units[utype] = units
             else:
+                print(utype,self.allowed_utypes)
+                print(units,self.units[utype])
                 raise Exception("Unknown units of %s" % utype)
         else:
             raise Exception("Unknown type of units")
