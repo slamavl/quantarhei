@@ -185,7 +185,7 @@ class TwoDResponseCalculator:
                 # Construct band_system object
                 #
                 Nb = 3
-                Ns = numpy.zeros(Nb, dtype=numpy.int)
+                Ns = numpy.zeros(Nb, dtype=int)
                 Ns[0] = 1
                 Ns[1] = agg.nmono
                 Ns[2] = Ns[1]*(Ns[1]-1)/2
