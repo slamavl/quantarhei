@@ -848,9 +848,14 @@ class LinSpectrumCalculator(EnergyUnitsManaged):
             data = axis.data*data
             data_fl = (axis.data**3)*data_fl
 
-        spect = AbsSpectrum(axis=axis, data=data)
+        spect_abs = LinSpectrum(axis=axis, data=data)
+        fluor_spect = LinSpectrum(axis=axis, data=data_fl)
+        
+        return {"abs": spect_abs, "fluor": fluor_spect}
+        
+        #spect = AbsSpectrum(axis=axis, data=data)
 
-        return spect
+        #return spect
 
 
     def _calculate_abs_from_dynamics(self, raw=False, alt=False):
